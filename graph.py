@@ -3,12 +3,12 @@ from hash import HashTable
 #Directional weighted graph
 class Graph( object ):
     def __init__( self ):
-        self.nodes = HashTable( 50 )
+        self.nodes = HashTable( 40 )
 
     # Add a vertex to the graph
     # Time Complexity: O(n)
     def addNode( self, location):
-        self.nodes.put( location.id, Node( location ) )
+        self.nodes.put( int( location.id ), Node( location ) )
 
     # Add edge between two nodes
     # Time Complexity: O(n)

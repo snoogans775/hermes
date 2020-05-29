@@ -8,38 +8,17 @@ from logistics import Location
 class Dispatcher( object ):
     def __init__( self ):
         self.locations = self._getLocations()
-        self.graph = self._createGraph()
+        self.graph = Graph()
+        self._createGraph()
         self.packages = self._getPackages()
 
     def _createGraph( self ):
-        graph = Graph()
 
-        # Add locations to graph as vertices
-        # Time Complexity: O(n)
-        locations = self._getLocations()
-        for i in range( locations.length ):
-            # Directly access each bucket for iteration
-            bucket = locations._table[i]
-            for value in bucket:
-                graph.addNode( value[1] )
+        # Add locations to graph as nodes
+        self._addLocationsToGraph()
 
         # Add distances to graph as edges
-        with open( 'data/distanceTable.csv' ) as file:
-            distanceData = csv.reader( file, delimiter=',' )
-
-            # Iterate through distance columns and rows
-            # Enumerate is alternative to row and column indexes
-            # Time Complexity: O(n^2)
-            for x, row in enumerate( distanceData ):
-                for y, weight in enumerate( row ):
-                    if not weight == '':
-                        graph.addWeightedEdge(
-                            locations.get( x ),
-                            locations.get( y ),
-                            float( weight )
-                        )
-
-        return graph
+        self._addDistancesToGraph()
 
     def _getLocations( self ):
         table = HashTable(10)
@@ -56,26 +35,31 @@ class Dispatcher( object ):
 
         return table
 
-    # Returns a list of distances as edges
-    def _getDistances( self ):
-        distances = []
+    # Add all locations to graph as nodes
+    # Time Complexity: O(n)
+    def _addLocationsToGraph( self ):
+        for i in range( self.locations.length ):
+            # Directly access each bucket for iteration
+            bucket = self.locations._table[i]
+            for value in bucket:
+                self.graph.addNode( value[1] )
+
+    # Add all distances to graph as edges based on existing nodes
+    # Time Complexity: O(n * m) n = rows, m = columns
+    def _addDistancesToGraph( self ):
         with open( 'data/distanceTable.csv' ) as file:
             distanceData = csv.reader( file, delimiter=',' )
 
             # Iterate through distance columns and rows
             # Enumerate is alternative to row and column indexes
-            # Time Complexity: O(n^2)
             for x, row in enumerate( distanceData ):
                 for y, weight in enumerate( row ):
                     if not weight == '':
-                        distances.append(
-                            Edge(
-                            locations.get( x ),
-                            locations.get( y ),
+                        self.graph.addWeightedEdge(
+                            self.locations.get( x ),
+                            self.locations.get( y ),
                             float( weight )
-                            )
                         )
-        return distances
 
     def _getPackages( self ):
         #FIXME: implement
@@ -84,7 +68,10 @@ class Dispatcher( object ):
 
 dispatch = Dispatcher()
 locations = dispatch._getLocations()
-print( dispatch.graph.getNode( locations.get( 0 ) ).edges.get(0).location.name )
+origin = locations.get( 0 )
+terminus = locations.get( 1 )
+print( origin.id )
+print( terminus.id )
 
 # newTable = HashTable(10)
 # newLocation = Location( [11,'hobbokin', '4 E St'] )

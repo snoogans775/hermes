@@ -7,7 +7,7 @@ class HashTable( object ):
     #Chained hash table stores multiple entries at an index
     #Time complexity: O(n)
     def put( self, key, value ):
-        hashedKey = hash ( int(key) )
+        hashedKey = hash ( key )
         bucket = self._findBucket( hashedKey )
         depth = self._findKeyValuePair( hashedKey, bucket )
 
@@ -21,7 +21,7 @@ class HashTable( object ):
     #Hash a key and extract correct bucket
     #Time complexity: O(n) where n is the length of the bucket
     def get( self, key ):
-        hashedKey = hash( int(key) )
+        hashedKey = hash( key )
         bucket = self._findBucket( hashedKey )
 
         #Compare search id to keys
