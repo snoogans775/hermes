@@ -3,7 +3,7 @@ from hash import HashTable
 #Directional weighted graph
 class Graph( object ):
     def __init__( self ):
-        self.nodes = HashTable( 40 )
+        self.nodes = HashTable( 10 )
 
     # Add a vertex to the graph
     # Time Complexity: O(n)
@@ -34,7 +34,7 @@ class Node( object ):
 
     #Time Complexity: O(n) where n is the number of edges
     def addEdge( self, edge ):
-        self.edges.put( edge.id, edge )
+        self.edges.put( int( edge.id ), edge )
 
     #Time Complexity: O(n) where n is the number of edge
     def findEdge( self, id ):

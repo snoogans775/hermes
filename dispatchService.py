@@ -18,7 +18,7 @@ class Dispatcher( object ):
         self._addLocationsToGraph()
 
         # Add distances to graph as edges
-        self._addDistancesToGraph()
+        #self._addDistancesToGraph()
 
     def _getLocations( self ):
         table = HashTable(10)
@@ -45,7 +45,7 @@ class Dispatcher( object ):
                 self.graph.addNode( value[1] )
 
     # Add all distances to graph as edges based on existing nodes
-    # Time Complexity: O(n * m) n = rows, m = columns
+    # Time Complexity: O(n^2)
     def _addDistancesToGraph( self ):
         with open( 'data/distanceTable.csv' ) as file:
             distanceData = csv.reader( file, delimiter=',' )
@@ -70,8 +70,8 @@ dispatch = Dispatcher()
 locations = dispatch._getLocations()
 origin = locations.get( 0 )
 terminus = locations.get( 1 )
-print( origin.id )
-print( terminus.id )
+graph = dispatch.graph
+print( type( graph.nodes.get(26).location.id ) )
 
 # newTable = HashTable(10)
 # newLocation = Location( [11,'hobbokin', '4 E St'] )
