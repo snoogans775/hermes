@@ -1,6 +1,8 @@
 import csv
 from hash import HashTable
 from graph import Graph
+from graph import Edge
+from graph import Node
 from logistics import Location
 
 class Dispatcher( object ):
@@ -54,6 +56,27 @@ class Dispatcher( object ):
 
         return table
 
+    # Returns a list of distances as edges
+    def _getDistances( self ):
+        distances = []
+        with open( 'data/distanceTable.csv' ) as file:
+            distanceData = csv.reader( file, delimiter=',' )
+
+            # Iterate through distance columns and rows
+            # Enumerate is alternative to row and column indexes
+            # Time Complexity: O(n^2)
+            for x, row in enumerate( distanceData ):
+                for y, weight in enumerate( row ):
+                    if not weight == '':
+                        distances.append(
+                            Edge(
+                            locations.get( x ),
+                            locations.get( y ),
+                            float( weight )
+                            )
+                        )
+        return distances
+
     def _getPackages( self ):
         #FIXME: implement
         return HashTable( 10 )
@@ -61,7 +84,7 @@ class Dispatcher( object ):
 
 dispatch = Dispatcher()
 locations = dispatch._getLocations()
-print( dispatch.graph.getNode( locations.get( 0 ) ).location.name )
+print( dispatch.graph.getNode( locations.get( 0 ) ).edges.get(0).location.name )
 
 # newTable = HashTable(10)
 # newLocation = Location( [11,'hobbokin', '4 E St'] )

@@ -1,6 +1,6 @@
 from hash import HashTable
 
-#Bidirectional weighted graph
+#Directional weighted graph
 class Graph( object ):
     def __init__( self ):
         self.nodes = HashTable( 50 )
@@ -26,8 +26,6 @@ class Graph( object ):
     # Get distance between two points
     def getDistanceBetween( self, origin, terminus ):
         return self.nodes.get( origin.id ).getDistance( terminus )
-
-    #FIXME: Find distance between non-adjacent points
 
 class Node( object ):
     def __init__( self, location ):
