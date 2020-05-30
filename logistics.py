@@ -2,7 +2,7 @@ from hash import HashTable
 
 class Package( object ):
     def __init__( self, id, address, deadline, city, zip, weight, status ):
-        self.id = id
+        self.id = int( id )
         self.address = address
         self.deadline = deadline
         self.city = city
@@ -41,7 +41,7 @@ class Truck( object ):
     SECONDS_PER_HOUR = 3200.0
 
     def __init__( self, id, startTime, location ):
-        self.id = id
+        self.id = int( id )
         self.currentTime = startTime
         self.location = location
         self.distanceTraveled = 0
@@ -56,8 +56,8 @@ class Truck( object ):
 class Location( object ):
     # Location data is contained in .csv form
     # The three columns are read without headers
-    def __init__( self, data ):
-        self.id = int( data[0] )
-        self.name = data[1]
-        self.address = data[2]
+    def __init__( self, id, name, address ):
+        self.id = int( id )
+        self.name = name
+        self.address = address
 

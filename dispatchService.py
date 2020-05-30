@@ -4,6 +4,7 @@ from graph import Graph
 from graph import Edge
 from graph import Node
 from logistics import Location
+from logistics import Package
 
 class Dispatcher( object ):
     def __init__( self ):
@@ -18,7 +19,7 @@ class Dispatcher( object ):
         self._addLocationsToGraph()
 
         # Add distances to graph as edges
-        #self._addDistancesToGraph()
+        self._addDistancesToGraph()
 
     def _getLocations( self ):
         table = HashTable(10)
@@ -29,7 +30,7 @@ class Dispatcher( object ):
             # Iterate through locations
             # Time Complexity: O(n)
             for row in locationData:
-                location = Location( row )
+                location = Location( row[0], row[1], row[2] )
                 # Add location to hash table of locations
                 table.put( int( location.id ), location )
 
@@ -55,6 +56,7 @@ class Dispatcher( object ):
             for x, row in enumerate( distanceData ):
                 for y, weight in enumerate( row ):
                     if not weight == '':
+                        # Add directional edges
                         self.graph.addWeightedEdge(
                             self.locations.get( x ),
                             self.locations.get( y ),
@@ -62,18 +64,20 @@ class Dispatcher( object ):
                         )
 
     def _getPackages( self ):
-        #FIXME: implement
-        return HashTable( 10 )
-
+        packages = HashTable(10)
+        with open('data/packageFile.csv') as file:
+            packageData = csv.reader( file, delimiter = ',' )
+            for row in packageData:
+                package = Package(
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[3],
+                    row[4],
+                    row[5],
+                    row[6],
+                )
+                packages.put( package.id, package)
+        return packages
 
 dispatch = Dispatcher()
-locations = dispatch._getLocations()
-origin = locations.get( 0 )
-terminus = locations.get( 1 )
-graph = dispatch.graph
-print( type( graph.nodes.get(26).location.id ) )
-
-# newTable = HashTable(10)
-# newLocation = Location( [11,'hobbokin', '4 E St'] )
-# newTable.put( newLocation.id, newLocation )
-# print( newTable.get( 11 ) )

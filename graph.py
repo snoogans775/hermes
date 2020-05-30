@@ -10,13 +10,13 @@ class Graph( object ):
     def addNode( self, location):
         self.nodes.put( int( location.id ), Node( location ) )
 
-    # Add edge between two nodes
+    # Add edge between two nodes bidirectionally
     # Time Complexity: O(n)
     def addWeightedEdge( self, origin, terminus, weight ):
         originEdge = Edge( origin, weight )
         terminusEdge = Edge( terminus, weight )
-        self.nodes.get( origin.id ).addEdge( originEdge )
-        self.nodes.get( terminus.id ).addEdge( terminusEdge )
+        self.nodes.get( origin.id ).addEdge( terminusEdge )
+        self.nodes.get( terminus.id ).addEdge( originEdge )
 
     # Get id of a vertex at a location
     # Time Complexity: O(n)
@@ -29,24 +29,24 @@ class Graph( object ):
 
 class Node( object ):
     def __init__( self, location ):
-        self.edges = HashTable()
+        self.edges = HashTable(10)
         self.location = location
 
     #Time Complexity: O(n) where n is the number of edges
     def addEdge( self, edge ):
         self.edges.put( int( edge.id ), edge )
 
-    #Time Complexity: O(n) where n is the number of edge
+    #Time Complexity: O(n) where n is the number of edges
     def findEdge( self, id ):
         return self.edges.get( id )
 
-    #Time Complexity: O(n) where n is the number of edge
+    #Time Complexity: O(n) where n is the number of edges
     def getDistance( self, location ):
         return self.edges.get( location.id ).weight
 
 
 class Edge( object ):
     def __init__( self, location, weight = 0 ):
+        self.id = int( location.id )
         self.location = location
-        self.id = location.id
         self.weight = weight

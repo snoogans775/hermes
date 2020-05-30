@@ -46,8 +46,12 @@ class HashTable( object ):
                 break
 
     # Directly return values of a bucket
-    def getBucket( self, index ):
-        return self._table[index]
+    def getAll( self ):
+        result = []
+        for bucket in range( self.length ):
+            for item in self._table[bucket]:
+                result.append( item )
+        return result
 
     #Method to initialize structure of the hash table
     # Time complexity: O(n)
