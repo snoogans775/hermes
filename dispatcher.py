@@ -8,7 +8,7 @@ from logistics import Package
 from logistics import Load
 from queue import SimpleQueue
 
-class Dispatcher( object ):
+class DispatchService( object ):
     def __init__( self ):
         self.locations = self._getLocations()
         self.graph = Graph()
@@ -18,12 +18,10 @@ class Dispatcher( object ):
     def getLoad( self, size ):
         # Push packages to new load queue based on size
         # Time Complexity: O(n)
-        load = SimpleQueue()
-        while ( load.length() < size and self.packages.length() > 0 ):
+        load = Load()
+        while ( load.getCount() < size and self.packages.length() > 0 ):
             # Naive method for loading packages
-            nextPackage = self.packages.pop()
-            print( nextPackage.address )
-            load.push( nextPackage )
+            load.addPackage( self.packages.pop() )
 
         return load
 
@@ -93,6 +91,3 @@ class Dispatcher( object ):
                 )
                 packages.push( package )
         return packages
-
-dispatch = Dispatcher()
-newLoad = dispatch.getLoad(16)

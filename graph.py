@@ -27,6 +27,19 @@ class Graph( object ):
     def getDistanceBetween( self, origin, terminus ):
         return self.nodes.get( origin.id ).getDistance( terminus )
 
+    # Get nearest neighbor of node: O(n * m) n = buckets, m = bucket items
+    def getNearestNeighbor( self, node ):
+        edges = node.edges.getAll()
+        # Find smallest distance to node in list
+        nearestNeighbor = edges[0].weight
+        for edge in edges:
+            distance = edge.weight
+            if distance < minDistance:
+                minDistance = edge.weight
+                nearestNeighbor = edge.location
+
+        return nearestNeighbor
+
 class Node( object ):
     def __init__( self, location ):
         self.edges = HashTable(10)

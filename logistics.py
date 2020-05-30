@@ -1,4 +1,4 @@
-from hash import HashTable
+from queue import SimpleQueue
 
 class Package( object ):
     def __init__( self, id, address, deadline, city, zip, weight, status ):
@@ -15,26 +15,28 @@ class Load( object ):
     # A load is a set of packages to be assigned to a truck
     # Time Complexity: O(1)
     def __init__( self ):
-        self.charter = HashTable()
-        self.weight = 0.0
-        self.count = 0 #FIXME: implement getSize() method for hashtable
+        self.charter = SimpleQueue()
+        self.count = 0
         self.max = self.MAX_PACKAGES
 
-    # Add a package to the load
-    # Time Complexity: O(n)
+    # Add a package to the load: O(1)
     def addPackage( self, package ):
-        if not _isFull():
-            self.charter.put( package )
+        if not self._isFull():
+            self.charter.push( package )
             self.count += 1
         else:
             return 'Maxmimum Load reached'
 
-    def removePackage( self, id ):
-        self.charter.remove( id, package )
+    # Remove package from load: O(1)
+    def removePackage( self ):
+        self.charter.pop()
         self.count -= 1
 
+    def getCount( self ):
+        return self.count
+
     def _isFull( self ):
-        return count > max
+        return self.charter.length() >= self.max
 
 class Truck( object ):
     VELOCITY = 18.0
@@ -44,7 +46,7 @@ class Truck( object ):
         self.id = int( id )
         self.currentTime = startTime
         self.location = location
-        self.distanceTraveled = 0
+        self.distanceToNextStop = 0
         self.load = Load()
 
     def assignLoad( self, load ):
