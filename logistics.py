@@ -47,6 +47,7 @@ class Truck( object ):
         self.location = location
         self.destination = location
         self.distanceToNextStop = 0
+        self.totalDistance = 0
         self.velocity = self._getVelocity()
         self.load = Load()
 

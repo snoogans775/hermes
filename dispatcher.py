@@ -1,8 +1,6 @@
 import csv
 from hash import HashTable
 from graph import Graph
-from graph import Edge
-from graph import Node
 from logistics import Location
 from logistics import Package
 from logistics import Load
@@ -24,6 +22,19 @@ class DispatchService( object ):
             load.addPackage( self.packages.pop() )
 
         return load
+
+    def getLocationByAddress( self, address ):
+        node = self.graph.getNodeByAddress( address )
+        return node.location
+
+    def advancePackageStatus( self, package ):
+        #FIXME: implement as SimpleQueue
+        return True
+
+    # Method to determine when all packages have been delivered
+    def isActive( self ):
+        #FIXME: implemnt as SimpleQueue
+        return True
 
     def _createGraph( self ):
 
