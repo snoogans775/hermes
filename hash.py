@@ -50,7 +50,7 @@ class HashTable( object ):
         result = []
         for bucket in range( self.length ):
             for item in self._table[bucket]:
-                result.append( item )
+                result.append( item[1] )
         return result
 
     #Method to initialize structure of the hash table

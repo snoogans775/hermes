@@ -1,5 +1,6 @@
 # WGUPS Routing Application
 # Kevin Fredericks 2020
+# Student ID: 001227342
 
 from logistics import Truck
 from dispatcher import DispatchService
@@ -11,26 +12,53 @@ currentTime = startTime
 
 # Create dispatcher to control routing
 dispatch = DispatchService()
+graph = dispatch.graph
 
 # Create two new trucks at the WGU address
 HUB = dispatch.locations.get(0)
-truck = Truck( 1, 1200, HUB )
+truck = Truck( 1, HUB )
 
 # Load trucks with minimal load
 load = dispatch.getLoad(10)
 truck.assignLoad( load )
+truck.setDestination( load.charter.peek() )
 
 # Main Loop
 while( True and currentTime < 16 * SECONDS_PER_HOUR):
-    # Move truck toward location of next package if not at location
-    destination = truck.load.charter.peek().address
-    graph = dispatch.graph
+    # Tick time forward by one second
     currentTime += 1
-    if( truck.location.address is not destination ):
 
-        print( "Traveling to destination" )
+    # Register when a truck reaches a location
+    if( truck.distanceToNextStop < 0.1 ):
+        truck.setLocation( truck.destination )
+
+    # Deliver package when at location and choose next destination
+    if not( truck.location.id == truck.destination.id ):
+        print( "Traveling to: " + str( truck.destination.address ) )
+        truck.distanceToNextStop -= truck.velocity
     else:
+        print( "Arrived at location: " + str( truck.location.name ) )
+        # Deliver package at location
+        # Direct truck to node of next package in load
+        # Time Complexity: O(1)
+        if( truck.load.getCount() > 0 ):
+            truck.load.removePackage()
 
+            nextPackage = truck.load.charter.peek()
+            if( nextPackage ):
+                # Next destination is the next package address
+                nextAddress = nextPackage.address
+                nextNode = graph.getNodeByAddress( nextAddress )
+                nextLocation = nextNode.location
+            else:
+                # Destination changes to hub
+                nextLocation = dispatch.locations.get( 0 )
+
+            # Find distance to next package location
+            truck.distanceToNextStop = graph.getDistanceBetween(
+                truck.location,
+                nextLocation
+            )
 
 
 

@@ -23,6 +23,12 @@ class Graph( object ):
     def getNode( self, location ):
         return self.nodes.get( location.id )
 
+    # Get first node returned by location name: O(n)
+    def getNodeByAddress( self, address ):
+        for node in self.nodes.getAll():
+            if( node.location.address == address ):
+                return node
+
     # Get distance between two points
     def getDistanceBetween( self, origin, terminus ):
         return self.nodes.get( origin.id ).getDistance( terminus )
@@ -56,7 +62,6 @@ class Node( object ):
     #Time Complexity: O(n) where n is the number of edges
     def getDistance( self, location ):
         return self.edges.get( location.id ).weight
-
 
 class Edge( object ):
     def __init__( self, location, weight = 0 ):

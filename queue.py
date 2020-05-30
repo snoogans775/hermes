@@ -17,7 +17,10 @@ class SimpleQueue( object ):
 
     # Identify value at head of queue: O(1)
     def peek( self ):
-        return self.list[0]
+        result = False
+        if( len( self.list ) > 0 ):
+            result = self.list[0]
+        return result
 
     def length( self ):
         return len( self.list )
