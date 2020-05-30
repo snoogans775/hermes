@@ -2,8 +2,8 @@
 
 class SimpleQueue( object ):
     # The queue is a set of methods applied to a linked list
-    def __init__( self, values = [] ):
-        self.list = values
+    def __init__( self ):
+        self.list = []
 
     # Add value to end of queue: O(1)
     def push( self, item ):
@@ -18,6 +18,9 @@ class SimpleQueue( object ):
     # Identify value at head of queue: O(1)
     def peek( self ):
         return self.list[0]
+
+    def length( self ):
+        return len( self.list )
 
 class PriorityQueue( object ):
     # The queue is a set of methods applied to a linked list

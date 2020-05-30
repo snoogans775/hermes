@@ -5,6 +5,8 @@ from graph import Edge
 from graph import Node
 from logistics import Location
 from logistics import Package
+from logistics import Load
+from queue import SimpleQueue
 
 class Dispatcher( object ):
     def __init__( self ):
@@ -12,6 +14,18 @@ class Dispatcher( object ):
         self.graph = Graph()
         self._createGraph()
         self.packages = self._getPackages()
+
+    def getLoad( self, size ):
+        # Push packages to new load queue based on size
+        # Time Complexity: O(n)
+        load = SimpleQueue()
+        while ( load.length() < size and self.packages.length() > 0 ):
+            # Naive method for loading packages
+            nextPackage = self.packages.pop()
+            print( nextPackage.address )
+            load.push( nextPackage )
+
+        return load
 
     def _createGraph( self ):
 
@@ -64,7 +78,7 @@ class Dispatcher( object ):
                         )
 
     def _getPackages( self ):
-        packages = HashTable(10)
+        packages = SimpleQueue()
         with open('data/packageFile.csv') as file:
             packageData = csv.reader( file, delimiter = ',' )
             for row in packageData:
@@ -77,7 +91,8 @@ class Dispatcher( object ):
                     row[5],
                     row[6],
                 )
-                packages.put( package.id, package)
+                packages.push( package )
         return packages
 
 dispatch = Dispatcher()
+newLoad = dispatch.getLoad(16)
