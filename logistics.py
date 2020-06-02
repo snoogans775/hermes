@@ -1,14 +1,24 @@
 from queue import SimpleQueue
+from status import Status
 
 class Package( object ):
-    def __init__( self, id, address, deadline, city, zip, weight, status ):
+
+    def __init__( self, id, address, city, state, zip, deadline, weight, notes ):
         self.id = int( id )
         self.address = address
-        self.deadline = deadline
         self.city = city
+        self.state = state
         self.zip = zip
+        self.deadline = deadline
         self.weight = weight
-        self.status = status
+        self.notes = notes
+        self.status = Status.STAGED
+
+    def setToInTransit( self ):
+        self.status = Status.IN_TRANSIT
+
+    def setToDelivered( self ):
+        self.status = Status.DELIVERED
 
 class Load( object ):
     MAX_PACKAGES = 16

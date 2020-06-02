@@ -3,13 +3,7 @@
 # Student ID: 001227342
 
 from logistics import Truck
-from dispatcher import DispatchService
-import time
-
-# Initialize time variables
-SECONDS_PER_HOUR = 3600
-startTime = 8 * SECONDS_PER_HOUR
-currentTime = startTime
+from dispatchService import DispatchService
 
 # Create dispatcher to control routing
 dispatch = DispatchService()
@@ -20,7 +14,7 @@ HUB = dispatch.locations.get(0)
 truck = Truck( 1, HUB )
 
 # Load trucks with minimal load
-load = dispatch.getLoad(10)
+load = dispatch.getLoad(10, 1)
 truck.assignLoad( load )
 firstAddress = truck.load.charter.peek().address
 firstLocation = dispatch.getLocationByAddress( firstAddress )
@@ -32,12 +26,12 @@ truck.distanceToNextStop = graph.getDistanceBetween(
 )
 
 # Main Loop
-while( True and currentTime < 28810 ):
+while( True and dispatch.currentTime < 28810 ):
     #time.sleep( 0.5 )
 
     # Tick time forward by one second
     print( 'CURRENT TIME: ' + str( currentTime ) )
-    currentTime += 1
+    dispatch.currentTime += 1
 
     # Register when a truck reaches a location
     truck.distanceToNextStop -= truck.velocity
