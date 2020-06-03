@@ -85,21 +85,17 @@ class Truck( object ):
         else:
             # The truck has arrived at destination
             self.delivering = True
-            # Deliver package at location
-            # Direct truck to node of next package in load
-            # Time Complexity: O(1)
-            if ( self.load.charter.peek() is not False ):
-                # Check next package
-                nextPackage = self.load.charter.peek()
-                # Remove package from load and report as delivered
-                self.load.removePackage() #FIXME: Attempting to pop empty list at end of day
-                self.currentDelivery = nextPackage
+            self.currentDelivery = self.load.charter.peek()
 
-                # Select next destination
-                nextLocation = self._findNextDestination()
+            if ( self.load.charter.length() > 0 ):
+                # Remove package from load and report as delivered
+                self.load.removePackage()
+
+                # Check next package and set destination
+                self.currentDelivery = self.load.charter.peek()
 
                 # Set new destination
-                self.setDestination( nextLocation )
+                self.setDestination( self._findNextDestination() )
 
     def assignLoad( self, load ):
         self.load = load

@@ -28,12 +28,13 @@ class DispatchService( object ):
     def update( self, fleet ):
         self.currentTime += 1
         for truck in fleet:
-            if truck.load.charter.peek() is False and truck.location is truck.hub:
+            # Check if truck is ready to be loaded
+            if truck.location is truck.hub and truck.load.charter.length() is 0:
                 truck.assignLoad( self.getLoad( Load.MAX_PACKAGES, truck ) )
-
-            # Register deliveries in package ledger
-            if truck.currentDelivery is not None:
-                self.deliverPackage( truck.currentDelivery )
+            else:
+                # Register deliveries in package ledger
+                if truck.delivering and truck.currentDelivery is not False:
+                    self.deliverPackage( truck.currentDelivery )
 
     # Push packages to new load queue based on size
     # Time Complexity: O(n)

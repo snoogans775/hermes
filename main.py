@@ -28,13 +28,13 @@ for truck in fleet:
 # Main Loop
 while( True and dispatch.isActive() == True ):
 
-    # Update dispatch service
-    # Advances time forward and checks for docked trucks
-    dispatch.update( fleet )
-
     # Moves truck forward and checks for delivery state
     for truck in fleet:
         truck.update()
+
+    # Update dispatch service
+    # Advances time forward and checks for docked trucks
+    dispatch.update( fleet )
 
     # Log status of trucks
     time = dispatch.currentTime
