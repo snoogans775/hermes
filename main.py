@@ -12,13 +12,15 @@ graph = dispatch.graph
 # Create two new trucks at the WGU address
 HUB = dispatch.locations.get(0)
 truck = Truck( 1, HUB )
+truckTwo = Truck(2, HUB )
 
 # Load trucks with minimal load
-load = dispatch.getLoad(10, 1)
+load = dispatch.getLoad(10, truck)
 truck.assignLoad( load )
 firstAddress = truck.load.charter.peek().address
 firstLocation = dispatch.getLocationByAddress( firstAddress )
 truck.setDestination( firstLocation )
+
 # Calculate distance to next package location
 truck.distanceToNextStop = graph.getDistanceBetween(
     truck.location,
@@ -29,12 +31,14 @@ truck.distanceToNextStop = graph.getDistanceBetween(
 while( True and dispatch.currentTime < 28810 ):
     #time.sleep( 0.5 )
 
-    # Tick time forward by one second
-    print( 'CURRENT TIME: ' + str( currentTime ) )
-    dispatch.currentTime += 1
+    # Update dispatch service
+    # Advances time forward and checks for docked trucks
+    dispatch.update()
+
+    # Moves truck forward and checks for delivery state
+    truck.update()
 
     # Register when a truck reaches a location
-    truck.distanceToNextStop -= truck.velocity
     print( 'Distance to next stop: ' + str( truck.distanceToNextStop ) )
     if( truck.distanceToNextStop <= 0 ):
         truck.location = truck.destination
@@ -49,12 +53,15 @@ while( True and dispatch.currentTime < 28810 ):
         # Direct truck to node of next package in load
         # Time Complexity: O(1)
         if( truck.load.getCount() > 0 ):
-            # Change package status to next state in dispatch service
-            dispatch.advancePackageStatus( truck.load.charter.peek() )
-
-            # Remove package from load
+            # Check next package
+            nextPackage = truck.load.charter.peek()
+            # Remove package from load and report as delivered
             truck.load.removePackage()
+            dispatch.deliverPackage( nextPackage )
 
+            # Select next destination
+            # Time Complexity: O(n)
+            # Check if another package exists in load
             nextPackage = truck.load.charter.peek()
             if( nextPackage ):
                 print( 'Changing destination to ' + str( nextPackage.address ) )

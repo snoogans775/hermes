@@ -38,6 +38,7 @@ class Graph( object ):
         edges = node.edges.getAll()
         # Find smallest distance to node in list
         nearestNeighbor = edges[0].weight
+        minDistance = 100
         for edge in edges:
             distance = edge.weight
             if distance < minDistance:

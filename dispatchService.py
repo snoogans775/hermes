@@ -4,22 +4,18 @@ from graph import Graph
 from logistics import Location
 from logistics import Package
 from logistics import Load
+from logistics import Truck
 from queue import SimpleQueue
 from status import Status
 
 class DispatchService( object ):
     SECONDS_PER_HOUR = 3600
-    GROUPED_PACKAGES = [13, 15, 19]
+    GROUP_ONE = [13, 15, 19]
+    GROUP_TWO = [3, 36, 18, 38]
     DELAYED_PACKAGES = [6, 25, 28, 32]
-    DELAY_TIME = 9.1 * 3600 # 9:05am
-    SECOND_TRUCK_PACKAGES = [3, 36, 38]
-
-    # Package statuses
-    #FIXME: implement as enumeration
-    STAGED = 'STAGED',
-    IN_TRANSIT = 'IN TRANSIT',
-    DELIVERED = 'DELIVERED'
-
+    INCORRECT_PACKAGES = [9]
+    DELAY_TIME = 9.1 * SECONDS_PER_HOUR # 9:05am
+    CORRECTION_TIME = 10.4 * SECONDS_PER_HOUR # 10:20am
 
     def __init__( self ):
         self.locations = self._getLocations()
@@ -27,52 +23,80 @@ class DispatchService( object ):
         self._createGraph()
         self.packages = self._getPackages()
         self.currentTime = 8 * self.SECONDS_PER_HOUR
+        self.log = []
+
+    def update( self ):
+        self.currentTime += 1
 
     def getLoad( self, size, truck = None ):
         # Push packages to new load queue based on size
         # Time Complexity: O(n)
         load = Load()
-        packageLength = len( self.packages.getAll() )
-        while ( load.getCount() < size and packageLength > 0 ):
-            # Naive method for loading packages
-            nextPackage = self._getNextPackage()
-            load.addPackage( nextPackage )
-            #self._loadPackage( nextPackage ) #FIXME: nextPackage is bool?
+        while ( load.getCount() < size ):
+            nextPackage = self._assignPackage( truck )
+            if nextPackage is not False:
+                load.addPackage( nextPackage )
+                self.loadPackage( nextPackage )
+            else:
+                self.log.append( 'No more packages to load ' )
+                # Exit condition for while loop
+                break
 
+        self.log.append( 'Load Size: ' + str( load.getCount() ) )
         return load
 
-    def _getNextPackage( self, truck = None ):
+    def _assignPackage( self, truck ):
         # The selection algorithm for packages uses a heuristic model
         # A queue is used to load highest priority first
         # The queue can be dumped if an extremely urgent package is found
-        # Time Complexity: O(n)
+        # Time Complexity: O(n) for each heuristic
         allPackages = self.packages.getAll()
         priorityList = SimpleQueue()
+
+        # Check for packages that must ship together
         for package in allPackages:
-            if package.status == Status.STAGED:
-                print( package.id )
-                # Check for packages that must ship together
-                if package.id in self.GROUPED_PACKAGES:
-                    priorityList.push( package )
-                # Check for packages that must be delayed
-                elif package.id in self.DELAYED_PACKAGES:
-                    if self.currentTime > self.DELAY_TIME:
-                        priorityList.push( package )
-                # Check if package needs a target truck
-                elif truck.id == 2:
-                    if package.id in self.SECOND_TRUCK_PACKAGES:
-                        priorityList.push( package )
-                else:
+            if package.id in self.GROUP_ONE:
+                priorityList.push( package )
+
+        # Check for packages with time sensitive requirements
+        for package in allPackages:
+            if package.id in self.DELAYED_PACKAGES:
+                if self.currentTime > self.DELAY_TIME:
                     priorityList.push( package )
 
-        print( priorityList.length() )
-        return priorityList.peek()
+            # Hot fix for incorrect postage
+            elif package.id in self.INCORRECT_PACKAGES:
+                if self.currentTime >= self.CORRECTION_TIME:
+                    self._updatePackageNine()
+                    priorityList.push( package )
 
-    def _loadPackage( self, package ):
+        # Check if package needs a target truck
+        if truck is not None:
+            for package in allPackages:
+                if truck.id == 2 and package.id in self.GROUP_TWO:
+                    priorityList.push( package )
+
+        # Push remaining packages if no heuristic is required
+        for package in allPackages:
+            if str( package.notes ) == '':
+                priorityList.push( package )
+
+        # Pop items of the prioritized list until a suitable package returns
+        # Time Complexity: O(n)
+        for i in range( priorityList.length() ):
+            selection = priorityList.peek()
+            if selection.status is not Status.STAGED:
+                priorityList.pop()
+            elif selection.status:
+                return selection
+
+        # Catch empty result
+        return False
+
+    def loadPackage( self, package ):
         # The packages array is a hash table
         # A hash table requires a swap to change the status of an item
         # Time Complexity: O(1)
-        print( 'Loading package: ' + str( package.id ) )
         tempPackage = self.packages.get( package.id )
 
         # Swap with package status changed
@@ -80,14 +104,14 @@ class DispatchService( object ):
         tempPackage.setToInTransit()
         self.packages.put( tempPackage.id, tempPackage)
 
-    def _deliverPackage( self, id ):
+    def deliverPackage( self, package ):
         # The packages object is a hash table
         # A hash table requires a swap to change the status of an item
         # Time Complexity: O(1)
-        tempPackage = self.packages.get( id )
+        tempPackage = self.packages.get( package.id )
 
         # Swap with package status changed
-        self.packages.remove( id, tempPackage )
+        self.packages.remove( package.id, tempPackage )
         tempPackage.setToDelivered()
         self.packages.put( tempPackage.id, tempPackage )
 
@@ -95,16 +119,17 @@ class DispatchService( object ):
         node = self.graph.getNodeByAddress( address )
         return node.location
 
-    # Directly modify status of package in packages
-    # Time Complexity: O(n)
-    def advancePackageStatus( self, package ):
-        id = package.id
-        return True
-
-    # Method to determine when all packages have been delivered
-    def isActive( self ):
-        #FIXME: implement as SimpleQueue
-        return True
+    def _updatePackageNine( self ):
+        if self.currentTime >= self.CORRECTION_TIME:
+            # Swap out object with corrected object
+            tempPackage = self.packages.get( 9 )
+            self.packages.remove( 9, tempPackage )
+            tempPackage.address = '410 S State St.'
+            tempPackage.city = 'Salt Lake City'
+            tempPackage.state = 'UT'
+            tempPackage.zip = '84111'
+            tempPackage.notes = ''
+            self.packages.put( tempPackage.id, tempPackage )
 
     # Add nodes and edges to graph
     # Time Complexity: O(n)
@@ -178,5 +203,19 @@ class DispatchService( object ):
                 packages.put( package.id, package )
         return packages
 
+''' DEBUG CODE
 dispatch = DispatchService()
-print( dispatch.getLoad( 10 ) )
+HUB = dispatch.locations.get(0)
+truck = Truck( 1, HUB )
+truck.assignLoad( dispatch.getLoad( 16, truck ) )
+print( '-------------')
+truck = Truck( 2, HUB )
+truck.assignLoad( dispatch.getLoad( 16, truck ) )
+dispatch.currentTime = dispatch.CORRECTION_TIME
+print( '-------------')
+truck = Truck( 1, HUB )
+truck.assignLoad( dispatch.getLoad( 16, truck ) )
+for package in dispatch.packages.getAll():
+    if package.status == Status.STAGED:
+        print( str( package.id ) + ': ' + package.notes )
+'''

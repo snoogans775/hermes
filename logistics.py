@@ -61,6 +61,11 @@ class Truck( object ):
         self.velocity = self._getVelocity()
         self.load = Load()
 
+    def update( self ):
+        # Move truck forward
+        self.distanceToNextStop -= self.velocity
+        self.totalDistance += self.velocity
+
     def assignLoad( self, load ):
         self.load = load
 
