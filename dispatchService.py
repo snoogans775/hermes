@@ -10,7 +10,7 @@ from status import Status
 
 class DispatchService( object ):
     SECONDS_PER_HOUR = 3600
-    GROUP_ONE = [13, 15, 19]
+    GROUP_ONE = [13, 14, 15, 16, 19, 20]
     GROUP_TWO = [3, 36, 18, 38]
     DELAYED_PACKAGES = [6, 25, 28, 32]
     INCORRECT_PACKAGES = [9]
@@ -25,12 +25,19 @@ class DispatchService( object ):
         self.currentTime = 8 * self.SECONDS_PER_HOUR
         self.log = []
 
-    def update( self ):
+    def update( self, fleet ):
         self.currentTime += 1
+        for truck in fleet:
+            if truck.load.charter.peek() is False and truck.location is truck.hub:
+                truck.assignLoad( self.getLoad( Load.MAX_PACKAGES, truck ) )
 
+            # Register deliveries in package ledger
+            if truck.currentDelivery is not None:
+                self.deliverPackage( truck.currentDelivery )
+
+    # Push packages to new load queue based on size
+    # Time Complexity: O(n)
     def getLoad( self, size, truck = None ):
-        # Push packages to new load queue based on size
-        # Time Complexity: O(n)
         load = Load()
         while ( load.getCount() < size ):
             nextPackage = self._assignPackage( truck )
@@ -44,6 +51,39 @@ class DispatchService( object ):
 
         self.log.append( 'Load Size: ' + str( load.getCount() ) )
         return load
+
+    # Swap data in and out of packages hash table
+    # Time Complexity: O(1)
+    def loadPackage( self, package ):
+        tempPackage = self.packages.get( package.id )
+
+        # Swap with package status changed
+        self.packages.remove( package.id, tempPackage )
+        tempPackage.setToInTransit()
+        self.packages.put( tempPackage.id, tempPackage)
+
+    # Swap data in and out of packages hash table
+    # Time Complexity: O(1)
+    def deliverPackage( self, package ):
+        tempPackage = self.packages.get( package.id )
+
+        # Swap with package status changed
+        self.packages.remove( package.id, tempPackage )
+        tempPackage.setToDelivered()
+        self.packages.put( tempPackage.id, tempPackage )
+
+    def getLocationByAddress( self, address ):
+        node = self.graph.getNodeByAddress( address )
+        return node.location
+
+    # Return True if any packages need to be delivered
+    def isActive( self ):
+        result = False
+
+        for package in self.packages.getAll():
+            if package.status is not Status.DELIVERED:
+                result = True
+        return result
 
     def _assignPackage( self, truck ):
         # The selection algorithm for packages uses a heuristic model
@@ -92,32 +132,6 @@ class DispatchService( object ):
 
         # Catch empty result
         return False
-
-    def loadPackage( self, package ):
-        # The packages array is a hash table
-        # A hash table requires a swap to change the status of an item
-        # Time Complexity: O(1)
-        tempPackage = self.packages.get( package.id )
-
-        # Swap with package status changed
-        self.packages.remove( package.id, tempPackage )
-        tempPackage.setToInTransit()
-        self.packages.put( tempPackage.id, tempPackage)
-
-    def deliverPackage( self, package ):
-        # The packages object is a hash table
-        # A hash table requires a swap to change the status of an item
-        # Time Complexity: O(1)
-        tempPackage = self.packages.get( package.id )
-
-        # Swap with package status changed
-        self.packages.remove( package.id, tempPackage )
-        tempPackage.setToDelivered()
-        self.packages.put( tempPackage.id, tempPackage )
-
-    def getLocationByAddress( self, address ):
-        node = self.graph.getNodeByAddress( address )
-        return node.location
 
     def _updatePackageNine( self ):
         if self.currentTime >= self.CORRECTION_TIME:
@@ -200,6 +214,7 @@ class DispatchService( object ):
                     row[6],
                     row[7]
                 )
+                package.setLocation( self.getLocationByAddress( row[1] ) )
                 packages.put( package.id, package )
         return packages
 

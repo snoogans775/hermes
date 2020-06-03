@@ -13,12 +13,16 @@ class Package( object ):
         self.weight = weight
         self.notes = notes
         self.status = Status.STAGED
+        self.location = None
 
     def setToInTransit( self ):
         self.status = Status.IN_TRANSIT
 
     def setToDelivered( self ):
         self.status = Status.DELIVERED
+
+    def setLocation( self, location ):
+        self.location = location
 
 class Load( object ):
     MAX_PACKAGES = 16
@@ -52,28 +56,80 @@ class Truck( object ):
     VELOCITY = 18.0
     SECONDS_PER_HOUR = 3200.0
 
-    def __init__( self, id, location ):
+    def __init__( self, id, hub, graph ):
         self.id = int( id )
-        self.location = location
-        self.destination = location
+        self.load = Load()
+        self.hub = hub
+        self.location = self.hub
+        self.destination = self.hub
         self.distanceToNextStop = 0
         self.totalDistance = 0
         self.velocity = self._getVelocity()
-        self.load = Load()
+        self.graph = graph
+        self.currentDelivery = None
+        self.delivering = False
 
     def update( self ):
-        # Move truck forward
-        self.distanceToNextStop -= self.velocity
-        self.totalDistance += self.velocity
+        # Register when a truck reaches a location
+        if (self.distanceToNextStop <= 0):
+            self.location = self.destination
+
+        # Deliver package when at location and choose next destination
+        if not (self.location.id == self.destination.id):
+            # The truck is in transit
+            self.delivering = False
+            # Move truck forward
+            self.distanceToNextStop -= self.velocity
+            self.totalDistance += self.velocity
+
+        else:
+            # The truck has arrived at destination
+            self.delivering = True
+            # Deliver package at location
+            # Direct truck to node of next package in load
+            # Time Complexity: O(1)
+            if ( self.load.charter.peek() is not False ):
+                # Check next package
+                nextPackage = self.load.charter.peek()
+                # Remove package from load and report as delivered
+                self.load.removePackage() #FIXME: Attempting to pop empty list at end of day
+                self.currentDelivery = nextPackage
+
+                # Select next destination
+                nextLocation = self._findNextDestination()
+
+                # Set new destination
+                self.setDestination( nextLocation )
 
     def assignLoad( self, load ):
         self.load = load
+        self.destination = self._findNextDestination()
 
     def setDestination( self, location ):
         self.destination = location
 
     def setLocation( self, location ):
         self.location = location
+
+    # Select next destination based on current location
+    # Time Complexity: O(n)
+    def _findNextDestination( self ):
+        # Check if another package exists in load
+        nextPackage = self.load.charter.peek()
+        if ( nextPackage ):
+            # Next destination is the next package address
+            nextLocation = nextPackage.location
+        else:
+            # Destination changes to hub
+            nextLocation = self.hub
+
+        # Calculate distance to next package location
+        self.distanceToNextStop = self.graph.getDistanceBetween(
+            self.location,
+            nextLocation
+        )
+
+        return nextLocation
 
     def _getVelocity( self ):
         return self.VELOCITY / self.SECONDS_PER_HOUR
@@ -85,4 +141,3 @@ class Location( object ):
         self.id = int( id )
         self.name = name
         self.address = address
-
