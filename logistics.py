@@ -14,6 +14,8 @@ class Package( object ):
         self.notes = notes
         self.status = Status.STAGED
         self.location = None
+        self.deliveredAt = 0
+        self.inTransitAt = 0
 
     def setToInTransit( self ):
         self.status = Status.IN_TRANSIT
@@ -21,11 +23,18 @@ class Package( object ):
     def setToDelivered( self ):
         self.status = Status.DELIVERED
 
+    def setToInTransit( self ):
+        self.status = Status.IN_TRANSIT
+
     def setLocation( self, location ):
         self.location = location
 
+    def setDeliveryTime( self, time ):
+        self.deliveredAt = time
+
 class Load( object ):
-    MAX_PACKAGES = 16
+    MIN_PACKAGES = 8
+    MAX_PACKAGES = 14
     # A load is a set of packages to be assigned to a truck
     # Time Complexity: O(1)
     def __init__( self ):
@@ -39,7 +48,7 @@ class Load( object ):
             self.charter.push( package )
             self.count += 1
         else:
-            return 'Maxmimum Load reached'
+            return 'Maximimum Load reached'
 
     # Remove package from load: O(1)
     def removePackage( self ):
@@ -50,7 +59,7 @@ class Load( object ):
         return self.count
 
     def _isFull( self ):
-        return self.charter.length() >= self.max
+        return self.charter.length() > self.max
 
 class Truck( object ):
     VELOCITY = 18.0
@@ -68,44 +77,55 @@ class Truck( object ):
         self.graph = graph
         self.currentDelivery = None
         self.delivering = False
+        self.loading = False
+        self.log = []
 
     def update( self ):
         # Register when a truck reaches a location
-        if (self.distanceToNextStop <= 0):
+        if ( self.distanceToNextStop <= 0 ):
             self.location = self.destination
 
         # Deliver package when at location and choose next destination
-        if not (self.location.id == self.destination.id):
+        if not ( self.location.id == self.destination.id ):
             # The truck is in transit
             self.delivering = False
+
             # Move truck forward
             self.distanceToNextStop -= self.velocity
             self.totalDistance += self.velocity
 
         else:
-            # The truck has arrived at destination
-            self.delivering = True
-            self.currentDelivery = self.load.charter.peek()
+            # The truck has arrived at a destination
+            if self.location is self.hub:
+                self.loading = True
+            else:
+                self.delivering = True
 
-            if ( self.load.charter.length() > 0 ):
-                # Remove package from load and report as delivered
-                self.load.removePackage()
+                if ( self.load.charter.length() > 0 ):
+                    self._deliverPackage()
 
-                # Check next package and set destination
-                self.currentDelivery = self.load.charter.peek()
-
-                # Set new destination
-                self.setDestination( self._findNextDestination() )
 
     def assignLoad( self, load ):
         self.load = load
         self.destination = self._findNextDestination()
+        self.loading = False
 
     def setDestination( self, location ):
         self.destination = location
 
     def setLocation( self, location ):
         self.location = location
+
+    def _deliverPackage( self ):
+        # Check next package and set destination
+        self.currentDelivery = self.load.charter.peek()
+
+        if ( self.location == self.currentDelivery.location ):
+            # Remove package from load
+            self.load.removePackage()
+
+        # Set new destination
+        self.setDestination( self._findNextDestination() )
 
     # Select next destination based on current location
     # Time Complexity: O(n)

@@ -1,4 +1,5 @@
 import csv
+import copy
 from hash import HashTable
 from graph import Graph
 from logistics import Location
@@ -10,9 +11,9 @@ from status import Status
 
 class DispatchService( object ):
     SECONDS_PER_HOUR = 3600
-    GROUP_ONE = [13, 14, 15, 16, 19, 20]
-    GROUP_TWO = [3, 36, 18, 38]
+    GROUP_ONE = [3, 13, 14, 15, 16, 18, 19, 20, 36, 38]
     DELAYED_PACKAGES = [6, 25, 28, 32]
+    RUSH_PACKAGES = [6]
     INCORRECT_PACKAGES = [9]
     DELAY_TIME = 9.1 * SECONDS_PER_HOUR # 9:05am
     CORRECTION_TIME = 10.4 * SECONDS_PER_HOUR # 10:20am
@@ -25,32 +26,38 @@ class DispatchService( object ):
         self.currentTime = 8 * self.SECONDS_PER_HOUR
         self.log = []
 
+    # The update function
     def update( self, fleet ):
         self.currentTime += 1
         for truck in fleet:
-            # Check if truck is ready to be loaded
-            if truck.location is truck.hub and truck.load.charter.length() is 0:
-                truck.assignLoad( self.getLoad( Load.MAX_PACKAGES, truck ) )
-            else:
-                # Register deliveries in package ledger
-                if truck.delivering and truck.currentDelivery is not False:
-                    self.deliverPackage( truck.currentDelivery )
+            # Register deliveries in package ledger
+            if truck.delivering:
+                self.recordDelivery( truck.currentDelivery )
+                package = self.packages.get( truck.currentDelivery.id )
+                self.packages.remove( truck.currentDelivery.id, truck.currentDelivery )
+                package.deliveredAt = self.currentTime
+                self.packages.put( package.id, package )
 
     # Push packages to new load queue based on size
     # Time Complexity: O(n)
-    def getLoad( self, size, truck = None ):
+    def getLoad( self, truck = None ):
         load = Load()
-        while ( load.getCount() < size ):
+        while ( load.charter.length() < Load.MAX_PACKAGES ):
             nextPackage = self._assignPackage( truck )
             if nextPackage is not False:
                 load.addPackage( nextPackage )
                 self.loadPackage( nextPackage )
             else:
-                self.log.append( 'No more packages to load ' )
                 # Exit condition for while loop
                 break
 
-        self.log.append( 'Load Size: ' + str( load.getCount() ) )
+        # Optimize the load
+        # If the load is too small, stop the operation
+        if( load.charter.length() ) > Load.MIN_PACKAGES:
+            load = self._optimizeLoad( load )
+        else:
+            return Load()
+
         return load
 
     # Swap data in and out of packages hash table
@@ -61,11 +68,12 @@ class DispatchService( object ):
         # Swap with package status changed
         self.packages.remove( package.id, tempPackage )
         tempPackage.setToInTransit()
+        tempPackage.inTransitAt = self.currentTime
         self.packages.put( tempPackage.id, tempPackage)
 
     # Swap data in and out of packages hash table
     # Time Complexity: O(1)
-    def deliverPackage( self, package ):
+    def recordDelivery( self, package ):
         tempPackage = self.packages.get( package.id )
 
         # Swap with package status changed
@@ -86,41 +94,98 @@ class DispatchService( object ):
                 result = True
         return result
 
+    # Greedy algorithm for load optimization
+    # Time Complexity O(logN)
+    # Complexity decreases as available nodes decreases in sort
+    def _optimizeLoad( self, load ):
+        outputLoad = Load()
+        packages = []
+
+        while load.charter.length() > 0:
+            packages.append( load.charter.pop() )
+
+        # Sort packages by distance from arbitrary item in list
+        '''
+        firstPackage = packages[4]
+        packages.sort( key = lambda x: self._getDistanceBetweenPackages( firstPackage.location, x.location ))
+        for package in packages:
+            outputLoad.addPackage( package )
+        '''
+
+        # Nearest Neighbor sorting
+        # Time Complexity: O(logN)
+        sortedList = SimpleQueue()
+        sortedList.push( packages[0] )
+        packages.remove( packages[0] )
+        for i in range( len( packages ) ):
+            neighbor = self._getNearestPackage( sortedList.peek(), packages )
+            sortedList.push( neighbor )
+            index = packages.index( neighbor )
+            packages.remove( packages[index] )
+
+        while( sortedList.length() > 0 ):
+            outputLoad.addPackage( sortedList.pop() )
+
+        return outputLoad
+
+    def _getNearestPackage( self, origin, group ):
+        groupLocations = []
+        for package in group:
+            groupLocations.append( package.location )
+
+        nearestLocation = self.graph.getNearestNeighbor( origin.location, groupLocations )
+
+        for package in group:
+            if package.location == nearestLocation:
+                return package
+
+    def _getDistanceBetweenPackages( self, origin, terminus ):
+        # The graph distance functions use locations as arguments
+        originLocation = origin
+        nextLocation   = terminus
+
+        distance = self.graph.getDistanceBetween( originLocation, nextLocation )
+
+        return distance
+
+    # The selection algorithm for packages uses a heuristic model
+    # A queue is used to load highest priority first
+    # The queue can be dumped if an extremely urgent package is found
+    # Time Complexity: O(n) for each package and O(n*m) for nested heuristics
     def _assignPackage( self, truck ):
-        # The selection algorithm for packages uses a heuristic model
-        # A queue is used to load highest priority first
-        # The queue can be dumped if an extremely urgent package is found
-        # Time Complexity: O(n) for each heuristic
         allPackages = self.packages.getAll()
         priorityList = SimpleQueue()
 
-        # Check for packages that must ship together
-        for package in allPackages:
-            if package.id in self.GROUP_ONE:
-                priorityList.push( package )
-
-        # Check for packages with time sensitive requirements
-        for package in allPackages:
-            if package.id in self.DELAYED_PACKAGES:
-                if self.currentTime > self.DELAY_TIME:
-                    priorityList.push( package )
-
-            # Hot fix for incorrect postage
-            elif package.id in self.INCORRECT_PACKAGES:
-                if self.currentTime >= self.CORRECTION_TIME:
-                    self._updatePackageNine()
-                    priorityList.push( package )
-
         # Check if package needs a target truck
-        if truck is not None:
-            for package in allPackages:
-                if truck.id == 2 and package.id in self.GROUP_TWO:
-                    priorityList.push( package )
-
-        # Push remaining packages if no heuristic is required
         for package in allPackages:
-            if str( package.notes ) == '':
-                priorityList.push( package )
+            if truck is not None:
+                if truck.id == 2 and package.id in self.GROUP_ONE:
+                    priorityList.push( package )
+                    allPackages.remove( package )
+
+        # Filter all packages for staged packages
+        for package in allPackages:
+            if package.status is Status.STAGED:
+                # Check for packages with time sensitive requirements
+                if self.currentTime >= self.DELAY_TIME:
+                    if package.id in self.RUSH_PACKAGES:
+                        priorityList.push( package )
+                        allPackages.remove( package )
+                    if package.id in self.DELAYED_PACKAGES:
+                        priorityList.push( package )
+                        #allPackages.remove( package )
+
+                # Hotfix for incorrect postage
+                if self.currentTime >= self.CORRECTION_TIME:
+                    if package.id in self.INCORRECT_PACKAGES:
+                        self._updatePackageNine()
+                        priorityList.push( package )
+                        allPackages.remove( package )
+
+                # Push remaining packages if no heuristic is required
+                if str( package.notes ) == '':
+                    priorityList.push( package )
+                    #allPackages.remove( package )
 
         # Pop items of the prioritized list until a suitable package returns
         # Time Complexity: O(n)
@@ -131,7 +196,7 @@ class DispatchService( object ):
             elif selection.status:
                 return selection
 
-        # Catch empty result
+        # Return empty result
         return False
 
     def _updatePackageNine( self ):
@@ -219,11 +284,35 @@ class DispatchService( object ):
                 packages.put( package.id, package )
         return packages
 
-''' DEBUG CODE
+''' DEBUG CODE '''
+# Nearest Neighbor Tests
+'''
 dispatch = DispatchService()
-HUB = dispatch.locations.get(0)
-truck = Truck( 1, HUB )
-truck.assignLoad( dispatch.getLoad( 16, truck ) )
+packages = dispatch.packages.getAll()
+testPackage = packages[1]
+packages.remove( testPackage )
+result = dispatch._getNearestPackage( testPackage, packages )
+print( str( testPackage.address ) + ' --> ' + str( result.address ) )
+print( dispatch._getDistanceBetweenPackages( testPackage, result) )
+'''
+'''
+dispatch = DispatchService()
+unoptimized = dispatch.getLoad( 16 )
+optimizedInput = copy.deepcopy( unoptimized )
+
+print( unoptimized.charter.length() )
+print( '-------- UNOPTIMIZED ---------')
+for i in range( unoptimized.charter.length() ):
+    print( unoptimized.charter.pop().address )
+
+optimized = dispatch._optimizeLoad( optimizedInput )
+print( '-------- OPTIMIZED ---------')
+for i in range( optimized.charter.length() ):
+    print( optimized.charter.pop().address )
+'''
+
+''' DEBUG CODE '''
+'''
 print( '-------------')
 truck = Truck( 2, HUB )
 truck.assignLoad( dispatch.getLoad( 16, truck ) )

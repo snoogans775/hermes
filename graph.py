@@ -7,7 +7,7 @@ class Graph( object ):
 
     # Add a vertex to the graph
     # Time Complexity: O(n)
-    def addNode( self, location):
+    def addNode( self, location ):
         self.nodes.put( int( location.id ), Node( location ) )
 
     # Add edge between two nodes bidirectionally
@@ -29,23 +29,25 @@ class Graph( object ):
             if( node.location.address == address ):
                 return node
 
-    # Get distance between two points
+    # Get distance between two lcoations
     def getDistanceBetween( self, origin, terminus ):
         return self.nodes.get( origin.id ).getDistance( terminus )
 
-    # Get nearest neighbor of node: O(n * m) n = buckets, m = bucket items
-    def getNearestNeighbor( self, node ):
-        edges = node.edges.getAll()
-        # Find smallest distance to node in list
-        nearestNeighbor = edges[0].weight
-        minDistance = 100
-        for edge in edges:
-            distance = edge.weight
-            if distance < minDistance:
-                minDistance = edge.weight
-                nearestNeighbor = edge.location
+    # Get nearest neighbor of a location
+    # Returns the closest location to the origin
+    # Time Complexity: O(n * m)
+    def getNearestNeighbor( self, origin, group ):
+        resultEdges = []
+        originNode = self.getNodeByAddress( origin.address )
+        originEdges = originNode.edges.getAll()
+        for location in group:
+            for edge in originEdges:
+                if location == edge.location:
+                    resultEdges.append( edge )
 
-        return nearestNeighbor
+        nearestNeighbor = min( resultEdges, key = lambda x: x.weight )
+
+        return nearestNeighbor.location
 
 class Node( object ):
     def __init__( self, location ):
