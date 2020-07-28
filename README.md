@@ -1,10 +1,10 @@
 # hermes
 A logistics simulation app for the WGU Computer Science program
 
-##Dependencies
+## Dependencies
 Python 3.x
 
-##Notes
+## Notes
 This app is intended to combine both prescriptive and generalized solutions for
 a logistics simulation. The following algorithms are applied to the problem:
 1. Nearest-NeighborCalculation
