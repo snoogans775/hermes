@@ -4,6 +4,9 @@ A logistics simulation app for the WGU Computer Science program
 ## Dependencies
 Python 3.x
 
+## Installation
+- OSX, Windows, Linux - Navigate to the installation directory and type `python3 main.py`
+
 ## Notes
 This app is intended to combine both prescriptive and generalized solutions for
 a logistics simulation. The following algorithms are applied to the problem:
