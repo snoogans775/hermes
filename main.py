@@ -1,6 +1,5 @@
-# WGUPS Routing Application
+# Hermes Routing Application
 # Kevin Fredericks 2020
-# Student ID: 001227342
 
 from logistics import Truck
 from dispatchService import DispatchService
