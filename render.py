@@ -1,9 +1,9 @@
-Import pygame.*
+from pygame import *
 
-Class window:
+class Window( object ):
 
-Class icon:
+class Icon( object ):
 
-Class truck extends icon:
+class truck extends icon:
 
-Class node extends icon:
+class node extends icon:
